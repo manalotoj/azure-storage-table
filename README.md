@@ -27,4 +27,6 @@ dotnet Org.Data.ConsoleApp.dll -cmd get -name [account-name] -key [account-key] 
 dotnet Org.Data.ConsoleApp.dll -cmd delete -name [account-name] -key [account-key] -table [table-name] -offset "2019-04-08T12:20:00"
 
 # TODO
-Provide a Durable Functions implementation.
+- Provide a Durable Functions implementation.
+- Create a maximum number of records setting to limit execution duration. Millions of records will take a long time to process.
+- Add reference to Azure Storage Table patterns and practices - https://docs.microsoft.com/en-us/azure/storage/tables/table-storage-design-patterns#intra-partition-secondary-index-pattern
