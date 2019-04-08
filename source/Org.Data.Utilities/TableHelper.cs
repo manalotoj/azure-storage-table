@@ -121,13 +121,11 @@ namespace Org.Data.Utilities
             foreach (var group in list)
             {
                 int batchCount = 0;
-                while (true)
+                var items = group.Skip(batchCount * batchSize).Take(batchSize);
+
+                do
                 {
-                    var items = group.Skip(batchCount * batchSize).Take(batchSize);
-                    if (items.Count() == 0) break;
-
                     var batchOps = new TableBatchOperation();
-
                     foreach (var item in items)
                     {
                         batchOps.Delete(item);
@@ -136,7 +134,8 @@ namespace Org.Data.Utilities
                     Trace.WriteLine($"deleting {items.Count()} rows");
                     tasks.Add(table.ExecuteBatchAsync(batchOps));
                     batchCount++;
-                }
+                    items = group.Skip(batchCount * batchSize).Take(batchSize);
+                } while (items.Count() > 0);
             }
             return tasks;
         }

@@ -69,77 +69,90 @@ namespace Org.Data.Test
             Assert.Equal(0, await helper.GetRecordCount(DateTime.Now));
         }
 
-        [Fact]
-        public async Task GetRecordCount_Returns_ExpectedNumber_Of_Records_Older_Than_Given_DateTime()
+        [Theory]
+        [InlineData(10, 4)]
+        [InlineData(120, 33)]
+        [InlineData(1005, 210)]
+        public async Task GetRecordCount_Returns_ExpectedNumber_Of_Records_Older_Than_Given_DateTime(int recordsToInsert, int oldRecordCount)
         {
             // arrange
-            DateTime offset = default(DateTime);            
-            for (int i = 0; i < 10; i++)
+            List<string> partitionKeys = new List<string>();
+            for (int i = 0; i < oldRecordCount; i++)
             {
-                await v1Table.ExecuteAsync(TableOperation.Insert(new TableEntity(Guid.NewGuid().ToString(), Guid.NewGuid().ToString())));
-                Thread.Sleep(1000);
-                if (i == 3)
-                {
-                    offset = DateTime.Now;
-                }
+                partitionKeys.Add(i.ToString());
             }
+            TableDataGenerator generator = new TableDataGenerator(accountName, accountKey, tableName);
 
-            // act
-            int result = await helper.GetRecordCount(offset);
+            await generator.AddRows(partitionKeys, 1);
+            Thread.Sleep(1000);
+            DateTime offset = DateTime.Now;
 
-            // assert
-            Assert.Equal(4, result);
+            partitionKeys.Clear();
+            for (int i = oldRecordCount; i < recordsToInsert; i++)
+            {
+                partitionKeys.Add(i.ToString());
+            }
+            await generator.AddRows(partitionKeys, 1);
 
-            // clean up
-            await helper.Delete(DateTime.Now);
+            Assert.Equal(oldRecordCount, await helper.GetRecordCount(offset));
         }
 
-        [Fact]
-        public async Task DeleteOldRecords()
+        [Theory]
+        [InlineData(10, 4)]
+        [InlineData(100, 60)]
+        [InlineData(1000, 432)]
+        public async Task DeleteOldRecordsWithoutPartition(int recordsToInsert, int recordsToDelete)
         {
             // arrange
-            DateTime offset = default(DateTime);
-            for (int i = 0; i < 10; i++)
+            List<string> partitionKeys = new List<string>();
+            for (int i = 0; i < recordsToDelete; i++)
             {
-                await v1Table.ExecuteAsync(TableOperation.Insert(new TableEntity(Guid.NewGuid().ToString(), Guid.NewGuid().ToString())));
-                Thread.Sleep(1000);
-                if (i == 3)
-                {
-                    offset = DateTime.Now;
-                }
+                partitionKeys.Add(i.ToString());
             }
+            TableDataGenerator generator = new TableDataGenerator(accountName, accountKey, tableName);
 
-            Assert.Equal(10, await helper.GetRecordCount(DateTime.Now));
+            await generator.AddRows(partitionKeys, 1);
+            Thread.Sleep(1000);
+            DateTime offset = DateTime.Now;
+
+            partitionKeys.Clear();
+            for (int i = recordsToDelete; i < recordsToInsert; i++)
+            {
+                partitionKeys.Add(i.ToString());
+            }
+            await generator.AddRows(partitionKeys, 1);
+
+            Assert.Equal(recordsToInsert, await helper.GetRecordCount(DateTime.Now));
 
             // act
             await helper.Delete(offset);
 
-            Assert.Equal(6, await helper.GetRecordCount(DateTime.Now));
+            Assert.Equal(recordsToInsert-recordsToDelete, await helper.GetRecordCount(DateTime.Now));
             await helper.Delete(DateTime.Now);
         }
 
-        [Fact]
-        public async Task DeleteOldRecordsForPartition()
+        [Theory]
+        [InlineData(10,4)]
+        [InlineData(100, 60)]
+        [InlineData(1000, 432)]
+        //[InlineData(5500, 3700)]
+        public async Task DeleteOldRecordsForPartition(int recordsToInsert, int recordsToDelete)
         {
             string partitionKey = Guid.NewGuid().ToString();
-            DateTime offset = default(DateTime);
             // arrange
-            for (int i = 0; i < 10; i++)
-            {
-                await v1Table.ExecuteAsync(TableOperation.Insert(new TableEntity(partitionKey, Guid.NewGuid().ToString())));
-                Thread.Sleep(1000);
-                if (i == 3)
-                {
-                    offset = DateTime.Now;
-                }                
-            }
+            TableDataGenerator generator = new TableDataGenerator(accountName, accountKey, tableName);
 
-            Assert.Equal(10, await helper.GetRecordCount(DateTime.Now, partitionKey));
+            await generator.AddRows(new List<string> { partitionKey }, recordsToDelete);
+            Thread.Sleep(1000);
+            DateTime offset = DateTime.Now;
+            await generator.AddRows(new List<string> { partitionKey }, recordsToInsert-recordsToDelete);
+
+            Assert.Equal(recordsToInsert, await helper.GetRecordCount(DateTime.Now, partitionKey));
 
             // act
             await helper.Delete(offset, partitionKey);
 
-            Assert.Equal(6, await helper.GetRecordCount(DateTime.Now, partitionKey));
+            Assert.Equal((recordsToInsert-recordsToDelete), await helper.GetRecordCount(DateTime.Now, partitionKey));
         }
 
     }
