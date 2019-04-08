@@ -1,7 +1,7 @@
 # Introduction 
 The purpose of this repo is to provide an example of how to delete Azure Storage table entities older than a given date/time.
 
-The solution contains the following projects:
+The code is in C#, .NET Core and authored using Visual Studio 2017. The solution contains the following projects:
 - Org.Data.Utilities: a class library with a single class, TableHelper.cs. TableHelper supports operations to delete table entities older than a given date/time value. A partition key value can optionally be provided.
 - Org.Data.Test: contains integration tests. WARNING: use an empty Azure Storage Table for testing as the tests will delete any/all existing entities within the specified table.
 - Org.Data.ConsoleApp: a console application that references Org.Data.Utilities.
