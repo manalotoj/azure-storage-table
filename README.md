@@ -13,9 +13,6 @@ Note that the underlying query to determine entity count or entities to be delet
 - NOT indexed. It is best to provide partition key value if at all possible.
 This can be changed to any date/time field. 
 
-# TODO
-Provide a Durable Functions implementation.
-
 # Prerequisites
 1. Visual Studio 2017 with the latest updates
 2. Azure Storage Account and Storage table for integration testing
@@ -29,4 +26,5 @@ dotnet Org.Data.ConsoleApp.dll -cmd get -name [account-name] -key [account-key] 
 4. Run the following to delete the same records from step 3:
 dotnet Org.Data.ConsoleApp.dll -cmd delete -name [account-name] -key [account-key] -table [table-name] -offset "2019-04-08T12:20:00"
 
-
+# TODO
+Provide a Durable Functions implementation.
